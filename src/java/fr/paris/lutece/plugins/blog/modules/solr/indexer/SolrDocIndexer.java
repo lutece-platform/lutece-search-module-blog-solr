@@ -1,10 +1,10 @@
-package fr.paris.lutece.plugins.htmldocs.modules.solr.indexer;
+package fr.paris.lutece.plugins.blog.modules.solr.indexer;
 
-import fr.paris.lutece.plugins.htmldocs.business.HtmlDoc;
-import fr.paris.lutece.plugins.htmldocs.business.Tag;
-import fr.paris.lutece.plugins.htmldocs.business.portlet.HtmlDocPublication;
-import fr.paris.lutece.plugins.htmldocs.service.HtmlDocService;
-import fr.paris.lutece.plugins.htmldocs.utils.HtmldocUtils;
+import fr.paris.lutece.plugins.blog.business.HtmlDoc;
+import fr.paris.lutece.plugins.blog.business.Tag;
+import fr.paris.lutece.plugins.blog.business.portlet.HtmlDocPublication;
+import fr.paris.lutece.plugins.blog.service.HtmlDocService;
+import fr.paris.lutece.plugins.blog.utils.HtmldocUtils;
 import fr.paris.lutece.plugins.search.solr.business.field.Field;
 import fr.paris.lutece.plugins.search.solr.indexer.SolrIndexer;
 import fr.paris.lutece.plugins.search.solr.indexer.SolrIndexerService;
@@ -39,7 +39,7 @@ import java.util.List;
  */
 public class SolrDocIndexer implements SolrIndexer
 {
-    public static final String BEAN_NAME = "htmldocs-solr.solrDocIndexer";
+    public static final String BEAN_NAME = "blog-solr.solrDocIndexer";
     // Not used
     // private static final String PARAMETER_SOLR_DOCUMENT_ID = "solr_document_id";
     private static final String TYPE = "htmldocs";
@@ -49,10 +49,10 @@ public class SolrDocIndexer implements SolrIndexer
 
     private static final String PARAMETER_PORTLET_ID = "portlet_id";
     private static final String PROPERTY_INDEXER_ENABLE = "solr.indexer.document.enable";
-    private static final String PROPERTY_DOCUMENT_MAX_CHARS = "htmldocs-solr.indexer.document.characters.limit";
-    private static final String PROPERTY_NAME = "htmldocs-solr.indexer.name";
-    private static final String PROPERTY_DESCRIPTION = "htmldocs-solr.indexer.description";
-    private static final String PROPERTY_VERSION = "htmldocs-solr.indexer.version";
+    private static final String PROPERTY_DOCUMENT_MAX_CHARS = "blog-solr.indexer.document.characters.limit";
+    private static final String PROPERTY_NAME = "blog-solr.indexer.name";
+    private static final String PROPERTY_DESCRIPTION = "blog-solr.indexer.description";
+    private static final String PROPERTY_VERSION = "blog-solr.indexer.version";
     private static final String PARAMETER_DOCUMENT_ID = "document_id";
     private static final List<String> LIST_RESSOURCES_NAME = new ArrayList<String>( );
     private static final String SHORT_NAME = "doc";

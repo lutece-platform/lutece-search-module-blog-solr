@@ -3,15 +3,15 @@
     <parent>
         <artifactId>lutece-global-pom</artifactId>
         <groupId>fr.paris.lutece.tools</groupId>
-        <version>4.0.2</version>
+        <version>4.0.3</version>
     </parent>
 
     <modelVersion>4.0.0</modelVersion>
     <groupId>fr.paris.lutece.plugins</groupId>
-        <artifactId>module-htmldocs-solr</artifactId>
+        <artifactId>module-blog-solr</artifactId>
     <packaging>lutece-plugin</packaging>
     <version>1.0.0-SNAPSHOT</version>
-    	<name>Lutece htmldocs solr module</name>
+    	<name>Lutece blog solr module</name>
     <repositories>
         <repository>
             <id>lutece</id>
@@ -36,7 +36,7 @@
         </dependency>
         <dependency>
             <groupId>fr.paris.lutece.plugins</groupId>
-            <artifactId>plugin-htmldocs</artifactId>
+            <artifactId>plugin-blog</artifactId>
             <version>1.0.0-SNAPSHOT</version>
             <type>lutece-plugin</type>
         </dependency>
@@ -44,15 +44,15 @@
     </dependencies>
 
     <properties>
-        <componentName>htmldocs-solr</componentName>
+        <componentName>blog-solr</componentName>
         <jiraProjectName>HTMLDOCSSOLR</jiraProjectName>
         <jiraComponentId></jiraComponentId>
     </properties>
     
     <scm>
-        <connection>scm:git:https://github.com/lutece-platform/lutece-search-module-htmldocs-solr.git</connection>
-        <developerConnection>scm:git:https://github.com/lutece-platform/lutece-search-module-htmldocs-solr.git</developerConnection>
-        <url>https://github.com/lutece-platform/lutece-search-module-htmldocs-solr.git</url>
+        <connection>scm:git:https://github.com/lutece-platform/lutece-search-module-blog-solr.git</connection>
+        <developerConnection>scm:git:https://github.com/lutece-platform/lutece-search-module-blog-solr.git</developerConnection>
+        <url>https://github.com/lutece-platform/lutece-search-module-blog-solr.git</url>
       
    </scm>
 </project>
