@@ -1,10 +1,10 @@
 package fr.paris.lutece.plugins.blog.modules.solr.indexer;
 
-import fr.paris.lutece.plugins.blog.business.HtmlDoc;
+import fr.paris.lutece.plugins.blog.business.Blog;
 import fr.paris.lutece.plugins.blog.business.Tag;
-import fr.paris.lutece.plugins.blog.business.portlet.HtmlDocPublication;
-import fr.paris.lutece.plugins.blog.service.HtmlDocService;
-import fr.paris.lutece.plugins.blog.utils.HtmldocUtils;
+import fr.paris.lutece.plugins.blog.business.portlet.BlogPublication;
+import fr.paris.lutece.plugins.blog.service.BlogService;
+import fr.paris.lutece.plugins.blog.utils.BlogUtils;
 import fr.paris.lutece.plugins.search.solr.business.field.Field;
 import fr.paris.lutece.plugins.search.solr.indexer.SolrIndexer;
 import fr.paris.lutece.plugins.search.solr.indexer.SolrIndexerService;
@@ -42,7 +42,7 @@ public class SolrDocIndexer implements SolrIndexer
     public static final String BEAN_NAME = "blog-solr.solrDocIndexer";
     // Not used
     // private static final String PARAMETER_SOLR_DOCUMENT_ID = "solr_document_id";
-    private static final String TYPE = "htmldocs";
+    private static final String TYPE = "blogs";
     private static final String COMMENT = "comment";
     private static final String LABEL = "label";
     private static final String HTML_CONTENT = "htmlContent";
@@ -56,7 +56,7 @@ public class SolrDocIndexer implements SolrIndexer
     private static final String PARAMETER_DOCUMENT_ID = "document_id";
     private static final List<String> LIST_RESSOURCES_NAME = new ArrayList<String>( );
     private static final String SHORT_NAME = "doc";
-    private static final String DOC_INDEXATION_ERROR = "[SolrHtmlDocIndexer] An error occured during the indexation of the document number ";
+    private static final String DOC_INDEXATION_ERROR = "[SolrBlogIndexer] An error occured during the indexation of the document number ";
 
     private static final Integer PARAMETER_DOCUMENT_MAX_CHARS = Integer.parseInt( AppPropertiesService.getProperty( PROPERTY_DOCUMENT_MAX_CHARS ) );
 
@@ -65,7 +65,7 @@ public class SolrDocIndexer implements SolrIndexer
      */
     public SolrDocIndexer( )
     {
-        LIST_RESSOURCES_NAME.add( HtmldocUtils.CONSTANT_TYPE_RESOURCE );
+        LIST_RESSOURCES_NAME.add( BlogUtils.CONSTANT_TYPE_RESOURCE );
     }
 
     @Override
@@ -85,7 +85,7 @@ public class SolrDocIndexer implements SolrIndexer
 
         Collection<SolrItem> solrItems = new ArrayList<SolrItem>( );
 
-        for ( HtmlDoc document : HtmlDocService.getInstance( ).getListDocWithoutBinaries( ) )
+        for ( Blog document : BlogService.getInstance( ).getListDocWithoutBinaries( ) )
         {
             try
             {
@@ -139,7 +139,7 @@ public class SolrDocIndexer implements SolrIndexer
         for ( Integer d : listIdDocument )
         {
 
-            HtmlDoc document = HtmlDocService.getInstance( ).findByPrimaryKeyWithoutBinaries( d );
+            Blog document = BlogService.getInstance( ).findByPrimaryKeyWithoutBinaries( d );
             // Generates the item to index
             if ( document != null )
             {
@@ -177,11 +177,11 @@ public class SolrDocIndexer implements SolrIndexer
      * @return The item
      * @throws IOException
      */
-    private SolrItem getItem( HtmlDoc document ) throws IOException
+    private SolrItem getItem( Blog document ) throws IOException
     {
         // the item
         SolrItem item = new SolrItem( );
-        item.setUid( getResourceUid( Integer.valueOf( document.getId( ) ).toString( ), HtmldocUtils.CONSTANT_TYPE_RESOURCE ) );
+        item.setUid( getResourceUid( Integer.valueOf( document.getId( ) ).toString( ), BlogUtils.CONSTANT_TYPE_RESOURCE ) );
         item.setDate( document.getUpdateDate( ) );
         item.setSummary( document.getDescription( ) );
         item.setTitle( document.getName( ) );
@@ -189,7 +189,7 @@ public class SolrDocIndexer implements SolrIndexer
         item.setSite( SolrIndexerService.getWebAppName( ) );
         item.setRole( "none" );
         String portlet = new String( String.valueOf( document.getId( ) ) );
-        for ( HtmlDocPublication p : document.getHtmldocPubilcation( ) )
+        for ( BlogPublication p : document.getBlogPubilcation() )
         {
             portlet = SolrConstants.CONSTANT_AND + p.getIdPortlet( );
         }
@@ -259,7 +259,7 @@ public class SolrDocIndexer implements SolrIndexer
      *            The SolR item
      * @return The content
      */
-    private static String getContentToIndex( HtmlDoc document, SolrItem item )
+    private static String getContentToIndex( Blog document, SolrItem item )
     {
         StringBuilder sbContentToIndex = new StringBuilder( );
         sbContentToIndex.append( document.getName( ) );
@@ -271,7 +271,7 @@ public class SolrDocIndexer implements SolrIndexer
         item.addDynamicField( COMMENT, document.getEditComment( ) );
         item.addDynamicField( LABEL, document.getContentLabel( ) );
         item.addDynamicField( HTML_CONTENT, document.getHtmlContent( ) );
-        for ( HtmlDocPublication p : document.getHtmldocPubilcation( ) )
+        for ( BlogPublication p : document.getBlogPubilcation( ) )
         {
             item.addDynamicField( "start_publication_portlet" + p.getIdPortlet( ), p.getDateBeginPublishing( ) );
             item.addDynamicField( "end_publication_portlet" + p.getIdPortlet( ), p.getDateEndPublishing( ) );
@@ -343,7 +343,7 @@ public class SolrDocIndexer implements SolrIndexer
      * @throws InterruptedException
      *             The InterruptedException
      */
-    private SolrItem getDocument( HtmlDoc document, String strUrl, String strRole, String strPortletDocumentId ) throws IOException, InterruptedException
+    private SolrItem getDocument( Blog document, String strUrl, String strRole, String strPortletDocumentId ) throws IOException, InterruptedException
     {
         // make a new, empty document
         SolrItem item = new SolrItem( );
@@ -364,7 +364,7 @@ public class SolrDocIndexer implements SolrIndexer
         // This field is not stored with document, it is indexed, but it is not
         // tokenized prior to indexing.
         String strIdDocument = String.valueOf( document.getId( ) );
-        item.setUid( getResourceUid( strIdDocument, HtmldocUtils.CONSTANT_TYPE_RESOURCE ) );
+        item.setUid( getResourceUid( strIdDocument, BlogUtils.CONSTANT_TYPE_RESOURCE ) );
 
         String strContentToIndex = getContentToIndex( document, item );
         ContentHandler handler = new BodyContentHandler( );
@@ -411,12 +411,12 @@ public class SolrDocIndexer implements SolrIndexer
         List<SolrItem> lstItems = new ArrayList<SolrItem>( );
 
         int nIdDocument = Integer.parseInt( strIdDocument );
-        HtmlDoc document = HtmlDocService.getInstance( ).findByPrimaryKeyWithoutBinaries( nIdDocument );
-        List<HtmlDocPublication> it = document.getHtmldocPubilcation( );
+        Blog document = BlogService.getInstance( ).findByPrimaryKeyWithoutBinaries( nIdDocument );
+        List<BlogPublication> it = document.getBlogPubilcation( );
 
         try
         {
-            for ( HtmlDocPublication p : it )
+            for ( BlogPublication p : it )
             {
                 UrlItem url = new UrlItem( SolrIndexerService.getBaseUrl( ) );
                 url.addParameter( PARAMETER_DOCUMENT_ID, nIdDocument );
