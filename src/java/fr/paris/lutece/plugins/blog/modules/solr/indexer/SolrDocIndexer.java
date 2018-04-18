@@ -53,7 +53,9 @@ public class SolrDocIndexer implements SolrIndexer
     private static final String PROPERTY_NAME = "blog-solr.indexer.name";
     private static final String PROPERTY_DESCRIPTION = "blog-solr.indexer.description";
     private static final String PROPERTY_VERSION = "blog-solr.indexer.version";
-    private static final String PARAMETER_DOCUMENT_ID = "document_id";
+    private static final String PARAMETER_BLOG_ID = "id";
+    private static final String PARAMETER_XPAGE = "page";
+    private static final String XPAGE_BLOG = "blog";
     private static final List<String> LIST_RESSOURCES_NAME = new ArrayList<String>( );
     private static final String SHORT_NAME = "doc";
     private static final String DOC_INDEXATION_ERROR = "[SolrBlogIndexer] An error occured during the indexation of the document number ";
@@ -199,7 +201,8 @@ public class SolrDocIndexer implements SolrIndexer
 
         // Reload the full object to get all its searchable attributes
         UrlItem url = new UrlItem( SolrIndexerService.getBaseUrl( ) );
-        url.addParameter( PARAMETER_DOCUMENT_ID, document.getId( ) );
+        url.addParameter( PARAMETER_XPAGE, XPAGE_BLOG );
+        url.addParameter( PARAMETER_BLOG_ID, document.getId( ) );
         // url.addParameter( PARAMETER_PORTLET_ID, document.getHtmldocPubilcation() );
         item.setUrl( url.getUrl( ) );
 
@@ -419,7 +422,8 @@ public class SolrDocIndexer implements SolrIndexer
             for ( BlogPublication p : it )
             {
                 UrlItem url = new UrlItem( SolrIndexerService.getBaseUrl( ) );
-                url.addParameter( PARAMETER_DOCUMENT_ID, nIdDocument );
+                url.addParameter( PARAMETER_XPAGE, XPAGE_BLOG );
+                url.addParameter( PARAMETER_BLOG_ID, nIdDocument );
                 url.addParameter( PARAMETER_PORTLET_ID, p.getIdPortlet( ) );
 
                 String strPortletDocumentId = nIdDocument + "&" + p.getIdPortlet( );
