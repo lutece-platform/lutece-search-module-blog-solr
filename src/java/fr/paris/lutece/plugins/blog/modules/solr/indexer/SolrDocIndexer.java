@@ -57,7 +57,7 @@ public class SolrDocIndexer implements SolrIndexer
     private static final String PARAMETER_XPAGE = "page";
     private static final String XPAGE_BLOG = "blog";
     private static final List<String> LIST_RESSOURCES_NAME = new ArrayList<String>( );
-    private static final String SHORT_NAME = "doc";
+    private static final String SHORT_NAME = "blog";
     private static final String DOC_INDEXATION_ERROR = "[SolrBlogIndexer] An error occured during the indexation of the document number ";
 
     private static final Integer PARAMETER_DOCUMENT_MAX_CHARS = Integer.parseInt( AppPropertiesService.getProperty( PROPERTY_DOCUMENT_MAX_CHARS ) );
