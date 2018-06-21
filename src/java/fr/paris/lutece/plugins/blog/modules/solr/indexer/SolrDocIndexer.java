@@ -191,7 +191,7 @@ public class SolrDocIndexer implements SolrIndexer
         item.setSite( SolrIndexerService.getWebAppName( ) );
         item.setRole( "none" );
         String portlet = new String( String.valueOf( document.getId( ) ) );
-        List<BlogPublication> listBlogPublications = document.getBlogPubilcation();
+        List<BlogPublication> listBlogPublications = document.getBlogPubilcation( );
         for ( BlogPublication p : listBlogPublications )
         {
             portlet = SolrConstants.CONSTANT_AND + p.getIdPortlet( );
@@ -204,8 +204,9 @@ public class SolrDocIndexer implements SolrIndexer
         UrlItem url = new UrlItem( SolrIndexerService.getBaseUrl( ) );
         url.addParameter( PARAMETER_XPAGE, XPAGE_BLOG );
         url.addParameter( PARAMETER_BLOG_ID, document.getId( ) );
-        if ( listBlogPublications.size() > 0 ) {
-            url.addParameter( PARAMETER_PORTLET_ID, listBlogPublications.get(0).getIdPortlet( ) );
+        if ( listBlogPublications.size( ) > 0 )
+        {
+            url.addParameter( PARAMETER_PORTLET_ID, listBlogPublications.get( 0 ).getIdPortlet( ) );
         }
         item.setUrl( url.getUrl( ) );
 
