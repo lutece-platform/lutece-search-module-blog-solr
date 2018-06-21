@@ -10,7 +10,7 @@
     <groupId>fr.paris.lutece.plugins</groupId>
         <artifactId>module-blog-solr</artifactId>
     <packaging>lutece-plugin</packaging>
-    <version>1.0.0</version>
+    <version>1.0.1-SNAPSHOT</version>
     	<name>Lutece blog solr module</name>
     <repositories>
         <repository>
@@ -54,6 +54,6 @@
         <developerConnection>scm:git:https://github.com/lutece-platform/lutece-search-module-blog-solr.git</developerConnection>
         <url>https://github.com/lutece-platform/lutece-search-module-blog-solr.git</url>
       
-     <tag>lutece-search-module-blog-solr-1.0.0</tag>
+     <tag>HEAD</tag>
   </scm>
 </project>
