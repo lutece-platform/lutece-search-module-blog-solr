@@ -87,7 +87,7 @@ public class SolrDocIndexer implements SolrIndexer
 
         Collection<SolrItem> solrItems = new ArrayList<SolrItem>( );
 
-        for ( Blog document : BlogService.getInstance( ).getListDocWithoutBinaries( ) )
+        for ( Blog document : BlogService.getInstance( ).getListBlogWithoutBinaries( ) )
         {
             try
             {
