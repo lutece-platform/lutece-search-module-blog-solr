@@ -37,9 +37,9 @@ import java.util.List;
  * The indexer service for Solr.
  *
  */
-public class SolrDocIndexer implements SolrIndexer
+public class SolrBlogIndexer implements SolrIndexer
 {
-    public static final String BEAN_NAME = "blog-solr.solrDocIndexer";
+    public static final String BEAN_NAME = "blog-solr.solrBlogIndexer";
     // Not used
     // private static final String PARAMETER_SOLR_DOCUMENT_ID = "solr_document_id";
     private static final String TYPE = "blogs";
@@ -65,7 +65,7 @@ public class SolrDocIndexer implements SolrIndexer
     /**
      * Creates a new SolrPageIndexer
      */
-    public SolrDocIndexer( )
+    public SolrBlogIndexer( )
     {
         LIST_RESSOURCES_NAME.add( BlogUtils.CONSTANT_TYPE_RESOURCE );
     }
