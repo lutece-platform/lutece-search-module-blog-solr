@@ -30,16 +30,19 @@ import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Date;
 import java.util.GregorianCalendar;
 import java.util.List;
+import java.util.Objects;
+import java.util.stream.Collectors;
 
 /**
  * The indexer service for Solr.
  *
  */
-public class SolrDocIndexer implements SolrIndexer
+public class SolrBlogIndexer implements SolrIndexer
 {
-    public static final String BEAN_NAME = "blog-solr.solrDocIndexer";
+    public static final String BEAN_NAME = "blog-solr.solrBlogIndexer";
     // Not used
     // private static final String PARAMETER_SOLR_DOCUMENT_ID = "solr_document_id";
     private static final String TYPE = "blogs";
@@ -65,7 +68,7 @@ public class SolrDocIndexer implements SolrIndexer
     /**
      * Creates a new SolrPageIndexer
      */
-    public SolrDocIndexer( )
+    public SolrBlogIndexer( )
     {
         LIST_RESSOURCES_NAME.add( BlogUtils.CONSTANT_TYPE_RESOURCE );
     }
@@ -181,6 +184,17 @@ public class SolrDocIndexer implements SolrIndexer
      */
     private SolrItem getItem( Blog document ) throws IOException
     {
+    	// Search for published blogs.
+    	Date today = new Date( );
+    	List<BlogPublication> listBlogPublications = document.getBlogPubilcation( )
+    			.stream().filter( bp -> bp.getDateBeginPublishing( ).before( today ) 
+    					&& bp.getDateEndPublishing( ).after( today ) )
+    			.collect( Collectors.toList( ) );
+    	
+    	if (listBlogPublications.size( ) == 0) {
+    		return null;
+    	}
+    	
         // the item
         SolrItem item = new SolrItem( );
         item.setUid( getResourceUid( Integer.valueOf( document.getId( ) ).toString( ), BlogUtils.CONSTANT_TYPE_RESOURCE ) );
@@ -190,24 +204,17 @@ public class SolrDocIndexer implements SolrIndexer
         item.setType( TYPE );
         item.setSite( SolrIndexerService.getWebAppName( ) );
         item.setRole( "none" );
-        String portlet = new String( String.valueOf( document.getId( ) ) );
-        List<BlogPublication> listBlogPublications = document.getBlogPubilcation( );
-        for ( BlogPublication p : listBlogPublications )
-        {
-            portlet = SolrConstants.CONSTANT_AND + p.getIdPortlet( );
-        }
+        String portlet = listBlogPublications.stream( )
+        		.map( BlogPublication::getIdPortlet )
+        		.map( String::valueOf )
+        		.collect( Collectors.joining( SolrConstants.CONSTANT_AND ) );
         item.setDocPortletId( portlet );
-
-        // item.setXmlContent( document.getXmlValidatedContent( ) );
 
         // Reload the full object to get all its searchable attributes
         UrlItem url = new UrlItem( SolrIndexerService.getBaseUrl( ) );
         url.addParameter( PARAMETER_XPAGE, XPAGE_BLOG );
         url.addParameter( PARAMETER_BLOG_ID, document.getId( ) );
-        if ( listBlogPublications.size( ) > 0 )
-        {
-            url.addParameter( PARAMETER_PORTLET_ID, listBlogPublications.get( 0 ).getIdPortlet( ) );
-        }
+        url.addParameter( PARAMETER_PORTLET_ID, listBlogPublications.get( 0 ).getIdPortlet( ) );
         item.setUrl( url.getUrl( ) );
 
         // Date Hierarchy
@@ -278,14 +285,6 @@ public class SolrDocIndexer implements SolrIndexer
         item.addDynamicField( COMMENT, document.getEditComment( ) );
         item.addDynamicField( LABEL, document.getContentLabel( ) );
         item.addDynamicField( HTML_CONTENT, document.getHtmlContent( ) );
-        for ( BlogPublication p : document.getBlogPubilcation( ) )
-        {
-            item.addDynamicField( "start_publication_portlet" + p.getIdPortlet( ), p.getDateBeginPublishing( ) );
-            item.addDynamicField( "end_publication_portlet" + p.getIdPortlet( ), p.getDateEndPublishing( ) );
-            item.addDynamicField( "status_portlet" + p.getIdPortlet( ), String.valueOf( p.getStatus( ) ) );
-
-        }
-
         return sbContentToIndex.toString( );
     }
 
