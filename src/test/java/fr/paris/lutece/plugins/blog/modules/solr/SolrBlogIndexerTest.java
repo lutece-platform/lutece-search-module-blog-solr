@@ -50,7 +50,7 @@ public class SolrBlogIndexerTest extends LuteceTestCase
        assertEquals( 0, errors.size( ) );
     }
     
-    public void indexListDocuments_empty() throws Exception
+    public void testIndexListDocuments_empty() throws Exception
     {
         SolrBlogIndexer indexer = new SolrBlogIndexer( );
        

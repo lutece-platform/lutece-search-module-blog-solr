@@ -33,6 +33,25 @@
  */
 package fr.paris.lutece.plugins.blog.modules.solr.indexer;
 
+import java.io.ByteArrayInputStream;
+import java.io.IOException;
+import java.util.ArrayList;
+import java.util.Calendar;
+import java.util.Collection;
+import java.util.Date;
+import java.util.GregorianCalendar;
+import java.util.List;
+import java.util.stream.Collectors;
+
+import org.apache.commons.collections.CollectionUtils;
+import org.apache.tika.exception.TikaException;
+import org.apache.tika.metadata.Metadata;
+import org.apache.tika.parser.ParseContext;
+import org.apache.tika.parser.html.HtmlParser;
+import org.apache.tika.sax.BodyContentHandler;
+import org.xml.sax.ContentHandler;
+import org.xml.sax.SAXException;
+
 import fr.paris.lutece.plugins.blog.business.Blog;
 import fr.paris.lutece.plugins.blog.business.Tag;
 import fr.paris.lutece.plugins.blog.business.portlet.BlogPublication;
@@ -51,24 +70,6 @@ import fr.paris.lutece.portal.service.util.AppLogService;
 import fr.paris.lutece.portal.service.util.AppPropertiesService;
 import fr.paris.lutece.util.url.UrlItem;
 
-import org.apache.tika.exception.TikaException;
-import org.apache.tika.metadata.Metadata;
-import org.apache.tika.parser.ParseContext;
-import org.apache.tika.parser.html.HtmlParser;
-import org.apache.tika.sax.BodyContentHandler;
-import org.xml.sax.ContentHandler;
-import org.xml.sax.SAXException;
-
-import java.io.ByteArrayInputStream;
-import java.io.IOException;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.Date;
-import java.util.GregorianCalendar;
-import java.util.List;
-import java.util.Objects;
-import java.util.stream.Collectors;
-
 /**
  * The indexer service for Solr.
  *
@@ -76,8 +77,6 @@ import java.util.stream.Collectors;
 public class SolrBlogIndexer implements SolrIndexer
 {
     public static final String BEAN_NAME = "blog-solr.solrBlogIndexer";
-    // Not used
-    // private static final String PARAMETER_SOLR_DOCUMENT_ID = "solr_document_id";
     private static final String TYPE = "blogs";
     private static final String COMMENT = "comment";
     private static final String LABEL = "label";
@@ -92,11 +91,13 @@ public class SolrBlogIndexer implements SolrIndexer
     private static final String PARAMETER_BLOG_ID = "id";
     private static final String PARAMETER_XPAGE = "page";
     private static final String XPAGE_BLOG = "blog";
-    private static final List<String> LIST_RESSOURCES_NAME = new ArrayList<String>( );
+    private static final List<String> LIST_RESSOURCES_NAME = new ArrayList<>( );
     private static final String SHORT_NAME = "blog";
     private static final String DOC_INDEXATION_ERROR = "[SolrBlogIndexer] An error occured during the indexation of the document number ";
+    private static final String DOC_PARSING_ERROR = "[SolrBlogIndexer] Error during document parsing. ";
 
-    private static final Integer PARAMETER_DOCUMENT_MAX_CHARS = Integer.parseInt( AppPropertiesService.getProperty( PROPERTY_DOCUMENT_MAX_CHARS ) );
+    private static final Integer PARAMETER_DOCUMENT_MAX_CHARS = Integer
+            .parseInt( AppPropertiesService.getProperty( PROPERTY_DOCUMENT_MAX_CHARS ) );
 
     /**
      * Creates a new SolrPageIndexer
@@ -118,10 +119,10 @@ public class SolrBlogIndexer implements SolrIndexer
     @Override
     public List<String> indexDocuments( )
     {
-        List<String> lstErrors = new ArrayList<String>( );
-        List<Integer> listDocument = new ArrayList<Integer>( );
+        List<String> lstErrors = new ArrayList<>( );
+        List<Integer> listDocument = new ArrayList<>( );
 
-        Collection<SolrItem> solrItems = new ArrayList<SolrItem>( );
+        Collection<SolrItem> solrItems = new ArrayList<>( );
 
         for ( Blog document : BlogService.getInstance( ).getListBlogWithoutBinaries( ) )
         {
@@ -140,7 +141,7 @@ public class SolrBlogIndexer implements SolrIndexer
                     listDocument.add( document.getId( ) );
                 }
             }
-            catch( Exception e )
+            catch ( Exception e )
             {
                 lstErrors.add( SolrIndexerService.buildErrorMessage( e ) );
                 AppLogService.error( DOC_INDEXATION_ERROR + document.getId( ), e );
@@ -148,16 +149,18 @@ public class SolrBlogIndexer implements SolrIndexer
             }
         }
 
-        try
+        if ( CollectionUtils.isNotEmpty( solrItems ) )
         {
-            SolrIndexerService.write( solrItems );
+            try
+            {
+                SolrIndexerService.write( solrItems );
+            }
+            catch ( Exception e )
+            {
+                lstErrors.add( SolrIndexerService.buildErrorMessage( e ) );
+                AppLogService.error( DOC_INDEXATION_ERROR, e );
+            }
         }
-        catch( Exception e )
-        {
-            lstErrors.add( SolrIndexerService.buildErrorMessage( e ) );
-            AppLogService.error( DOC_INDEXATION_ERROR, e );
-        }
-
         return lstErrors;
     }
 
@@ -170,9 +173,9 @@ public class SolrBlogIndexer implements SolrIndexer
      */
     public List<String> indexListDocuments( Portlet portlet, List<Integer> listIdDocument ) throws Exception
     {
-        List<String> lstErrors = new ArrayList<String>( );
+        List<String> lstErrors = new ArrayList<>( );
 
-        Collection<SolrItem> solrItems = new ArrayList<SolrItem>( );
+        Collection<SolrItem> solrItems = new ArrayList<>( );
 
         for ( Integer d : listIdDocument )
         {
@@ -191,56 +194,53 @@ public class SolrBlogIndexer implements SolrIndexer
             }
         }
 
-        try
+        if ( CollectionUtils.isNotEmpty( solrItems ) )
         {
-            SolrIndexerService.write( solrItems );
+            try
+            {
+                SolrIndexerService.write( solrItems );
+            }
+            catch ( Exception e )
+            {
+                lstErrors.add( SolrIndexerService.buildErrorMessage( e ) );
+                AppLogService.error( DOC_INDEXATION_ERROR, e );
+                throw e;
+            }
         }
-        catch( Exception e )
-        {
-            lstErrors.add( SolrIndexerService.buildErrorMessage( e ) );
-            AppLogService.error( DOC_INDEXATION_ERROR, e );
-            throw new Exception( );
-        }
-
         return lstErrors;
     }
 
     /**
      * Get item
      * 
-     * @param portlet
-     *            The portlet
-     * @param document
-     *            The document
+     * @param portlet  The portlet
+     * @param document The document
      * @return The item
-     * @throws IOException
      */
-    private SolrItem getItem( Blog document ) throws IOException
+    private SolrItem getItem( Blog document )
     {
-    	// Search for published blogs.
-    	Date today = new Date( );
-    	List<BlogPublication> listBlogPublications = document.getBlogPubilcation( )
-    			.stream().filter( bp -> bp.getDateBeginPublishing( ).before( today ) 
-    					&& bp.getDateEndPublishing( ).after( today ) )
-    			.collect( Collectors.toList( ) );
-    	
-    	if (listBlogPublications.size( ) == 0) {
-    		return null;
-    	}
-    	
+        // Search for published blogs.
+        Date today = new Date( );
+        List<BlogPublication> listBlogPublications = document.getBlogPubilcation( ).stream( ).filter(
+                bp -> bp.getDateBeginPublishing( ).before( today ) && bp.getDateEndPublishing( ).after( today ) )
+                .collect( Collectors.toList( ) );
+
+        if ( CollectionUtils.isEmpty( listBlogPublications ) )
+        {
+            return null;
+        }
+
         // the item
         SolrItem item = new SolrItem( );
-        item.setUid( getResourceUid( Integer.valueOf( document.getId( ) ).toString( ), BlogUtils.CONSTANT_TYPE_RESOURCE ) );
+        item.setUid( getResourceUid( Integer.toString( document.getId( ) ), BlogUtils.CONSTANT_TYPE_RESOURCE ) );
         item.setDate( document.getUpdateDate( ) );
         item.setSummary( document.getDescription( ) );
         item.setTitle( document.getName( ) );
         item.setType( TYPE );
         item.setSite( SolrIndexerService.getWebAppName( ) );
         item.setRole( "none" );
-        String portlet = listBlogPublications.stream( )
-        		.map( BlogPublication::getIdPortlet )
-        		.map( String::valueOf )
-        		.collect( Collectors.joining( SolrConstants.CONSTANT_AND ) );
+        String portlet = listBlogPublications.stream( ).map( BlogPublication::getIdPortlet ).map( String::valueOf )
+                .collect( Collectors.joining( SolrConstants.CONSTANT_AND ) );
         item.setDocPortletId( portlet );
 
         // Reload the full object to get all its searchable attributes
@@ -253,10 +253,10 @@ public class SolrBlogIndexer implements SolrIndexer
         // Date Hierarchy
         GregorianCalendar calendar = new GregorianCalendar( );
         calendar.setTime( document.getUpdateDate( ) );
-        item.setHieDate( calendar.get( GregorianCalendar.YEAR ) + "/" + ( calendar.get( GregorianCalendar.MONTH ) + 1 ) + "/"
-                + calendar.get( GregorianCalendar.DAY_OF_MONTH ) + "/" );
+        item.setHieDate( calendar.get( Calendar.YEAR ) + "/" + ( calendar.get( Calendar.MONTH ) + 1 ) + "/"
+                + calendar.get( Calendar.DAY_OF_MONTH ) + "/" );
 
-        List<String> categorie = new ArrayList<String>( );
+        List<String> categorie = new ArrayList<>( );
 
         for ( Tag cat : document.getTag( ) )
         {
@@ -267,29 +267,17 @@ public class SolrBlogIndexer implements SolrIndexer
 
         // The content
         String strContentToIndex = getContentToIndex( document, item );
-        ContentHandler handler = null;
-        if ( PARAMETER_DOCUMENT_MAX_CHARS != null )
-        {
-            handler = new BodyContentHandler( PARAMETER_DOCUMENT_MAX_CHARS );
-        }
-        else
-        {
-            handler = new BodyContentHandler( );
-        }
-
+        ContentHandler handler = new BodyContentHandler( PARAMETER_DOCUMENT_MAX_CHARS );
         Metadata metadata = new Metadata( );
 
         try
         {
-            new HtmlParser( ).parse( new ByteArrayInputStream( strContentToIndex.getBytes( ) ), handler, metadata, new ParseContext( ) );
+            new HtmlParser( ).parse( new ByteArrayInputStream( strContentToIndex.getBytes( ) ), handler, metadata,
+                    new ParseContext( ) );
         }
-        catch( SAXException e )
+        catch ( IOException | TikaException | SAXException e )
         {
-            throw new AppException( "Error during document parsing." );
-        }
-        catch( TikaException e )
-        {
-            throw new AppException( "Error during document parsing." );
+            throw new AppException( DOC_PARSING_ERROR, e );
         }
 
         item.setContent( handler.toString( ) );
@@ -300,10 +288,8 @@ public class SolrBlogIndexer implements SolrIndexer
     /**
      * GEt the content to index
      * 
-     * @param document
-     *            The document
-     * @param item
-     *            The SolR item
+     * @param document The document
+     * @param item     The SolR item
      * @return The content
      */
     private static String getContentToIndex( Blog document, SolrItem item )
@@ -359,30 +345,23 @@ public class SolrBlogIndexer implements SolrIndexer
     @Override
     public List<Field> getAdditionalFields( )
     {
-        List<Field> lstFields = new ArrayList<Field>( );
-
-        return lstFields;
+        return new ArrayList<>( );
     }
 
     /**
-     * Builds a document which will be used by solr during the indexing of the pages of the site with the following fields : summary, uid, url, contents, title
+     * Builds a document which will be used by solr during the indexing of the pages
+     * of the site with the following fields : summary, uid, url, contents, title
      * and description.
      *
-     * @param document
-     *            the document to index
-     * @param strUrl
-     *            the url of the documents
-     * @param strRole
-     *            the lutece role of the page associate to the document
-     * @param strPortletDocumentId
-     *            the document id concatened to the id portlet with a & in the middle
+     * @param document             the document to index
+     * @param strUrl               the url of the documents
+     * @param strRole              the lutece role of the page associate to the
+     *                             document
+     * @param strPortletDocumentId the document id concatened to the id portlet with
+     *                             a & in the middle
      * @return the built Document
-     * @throws IOException
-     *             The IO Exception
-     * @throws InterruptedException
-     *             The InterruptedException
      */
-    private SolrItem getDocument( Blog document, String strUrl, String strRole, String strPortletDocumentId ) throws IOException, InterruptedException
+    private SolrItem getDocument( Blog document, String strUrl, String strRole, String strPortletDocumentId )
     {
         // make a new, empty document
         SolrItem item = new SolrItem( );
@@ -411,16 +390,12 @@ public class SolrBlogIndexer implements SolrIndexer
 
         try
         {
-            new org.apache.tika.parser.html.HtmlParser( ).parse( new ByteArrayInputStream( strContentToIndex.getBytes( ) ), handler, metadata,
-                    new ParseContext( ) );
+            new HtmlParser( ).parse(
+                    new ByteArrayInputStream( strContentToIndex.getBytes( ) ), handler, metadata, new ParseContext( ) );
         }
-        catch( SAXException e )
+        catch ( IOException | TikaException | SAXException e )
         {
-            throw new AppException( "Error during document parsing." );
-        }
-        catch( TikaException e )
-        {
-            throw new AppException( "Error during document parsing." );
+            throw new AppException( DOC_PARSING_ERROR );
         }
 
         // Add the tag-stripped contents as a Reader-valued Text field so it will
@@ -447,7 +422,7 @@ public class SolrBlogIndexer implements SolrIndexer
     @Override
     public List<SolrItem> getDocuments( String strIdDocument )
     {
-        List<SolrItem> lstItems = new ArrayList<SolrItem>( );
+        List<SolrItem> lstItems = new ArrayList<>( );
 
         int nIdDocument = Integer.parseInt( strIdDocument );
         Blog document = BlogService.getInstance( ).findByPrimaryKeyWithoutBinaries( nIdDocument );
@@ -468,9 +443,9 @@ public class SolrBlogIndexer implements SolrIndexer
                 lstItems.add( getDocument( document, url.getUrl( ), page.getRole( ), strPortletDocumentId ) );
             }
         }
-        catch( Exception e )
+        catch ( Exception e )
         {
-            throw new RuntimeException( e );
+            throw new AppException( e.getMessage( ), e );
         }
 
         return lstItems;
