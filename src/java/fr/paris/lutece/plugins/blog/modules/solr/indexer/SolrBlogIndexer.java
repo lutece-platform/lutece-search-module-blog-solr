@@ -33,8 +33,6 @@
  */
 package fr.paris.lutece.plugins.blog.modules.solr.indexer;
 
-import java.io.ByteArrayInputStream;
-import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.Collection;
@@ -44,15 +42,11 @@ import java.util.List;
 import java.util.stream.Collectors;
 
 import org.apache.commons.collections.CollectionUtils;
-import org.apache.tika.exception.TikaException;
-import org.apache.tika.metadata.Metadata;
-import org.apache.tika.parser.ParseContext;
-import org.apache.tika.parser.html.HtmlParser;
-import org.apache.tika.sax.BodyContentHandler;
 import org.xml.sax.ContentHandler;
-import org.xml.sax.SAXException;
 
 import fr.paris.lutece.plugins.blog.business.Blog;
+import fr.paris.lutece.plugins.blog.business.DocContent;
+import fr.paris.lutece.plugins.blog.business.DocContentHome;
 import fr.paris.lutece.plugins.blog.business.Tag;
 import fr.paris.lutece.plugins.blog.business.portlet.BlogPublication;
 import fr.paris.lutece.plugins.blog.service.BlogService;
@@ -61,10 +55,9 @@ import fr.paris.lutece.plugins.search.solr.business.field.Field;
 import fr.paris.lutece.plugins.search.solr.indexer.SolrIndexer;
 import fr.paris.lutece.plugins.search.solr.indexer.SolrIndexerService;
 import fr.paris.lutece.plugins.search.solr.indexer.SolrItem;
+import fr.paris.lutece.plugins.search.solr.util.LuteceSolrException;
 import fr.paris.lutece.plugins.search.solr.util.SolrConstants;
-import fr.paris.lutece.portal.business.page.Page;
-import fr.paris.lutece.portal.business.page.PageHome;
-import fr.paris.lutece.portal.business.portlet.Portlet;
+import fr.paris.lutece.plugins.search.solr.util.TikaIndexerUtil;
 import fr.paris.lutece.portal.service.util.AppException;
 import fr.paris.lutece.portal.service.util.AppLogService;
 import fr.paris.lutece.portal.service.util.AppPropertiesService;
@@ -84,7 +77,6 @@ public class SolrBlogIndexer implements SolrIndexer
 
     private static final String PARAMETER_PORTLET_ID = "portlet_id";
     private static final String PROPERTY_INDEXER_ENABLE = "solr.indexer.document.enable";
-    private static final String PROPERTY_DOCUMENT_MAX_CHARS = "blog-solr.indexer.document.characters.limit";
     private static final String PROPERTY_NAME = "blog-solr.indexer.name";
     private static final String PROPERTY_DESCRIPTION = "blog-solr.indexer.description";
     private static final String PROPERTY_VERSION = "blog-solr.indexer.version";
@@ -95,9 +87,6 @@ public class SolrBlogIndexer implements SolrIndexer
     private static final String SHORT_NAME = "blog";
     private static final String DOC_INDEXATION_ERROR = "[SolrBlogIndexer] An error occured during the indexation of the document number ";
     private static final String DOC_PARSING_ERROR = "[SolrBlogIndexer] Error during document parsing. ";
-
-    private static final Integer PARAMETER_DOCUMENT_MAX_CHARS = Integer
-            .parseInt( AppPropertiesService.getProperty( PROPERTY_DOCUMENT_MAX_CHARS ) );
 
     /**
      * Creates a new SolrPageIndexer
@@ -145,7 +134,6 @@ public class SolrBlogIndexer implements SolrIndexer
             {
                 lstErrors.add( SolrIndexerService.buildErrorMessage( e ) );
                 AppLogService.error( DOC_INDEXATION_ERROR + document.getId( ), e );
-
             }
         }
 
@@ -165,13 +153,13 @@ public class SolrBlogIndexer implements SolrIndexer
     }
 
     /**
-     * iNDEX LIST oF DICUMENT
+     * Index list of documents
      * 
      * @param listIdDocument
      * @return error LIST
-     * @throws Exception
+     * @throws LuteceSolrException
      */
-    public List<String> indexListDocuments( Portlet portlet, List<Integer> listIdDocument ) throws Exception
+    public List<String> indexListDocuments( List<Integer> listIdDocument ) throws LuteceSolrException
     {
         List<String> lstErrors = new ArrayList<>( );
 
@@ -204,16 +192,17 @@ public class SolrBlogIndexer implements SolrIndexer
             {
                 lstErrors.add( SolrIndexerService.buildErrorMessage( e ) );
                 AppLogService.error( DOC_INDEXATION_ERROR, e );
-                throw e;
+                throw new LuteceSolrException( DOC_INDEXATION_ERROR, e );
             }
         }
         return lstErrors;
     }
 
     /**
-     * Get item
+     * Builds a document which will be used by solr during the indexing of the pages
+     * of the site with the following fields : summary, uid, url, contents, title
+     * and description.
      * 
-     * @param portlet  The portlet
      * @param document The document
      * @return The item
      */
@@ -267,20 +256,22 @@ public class SolrBlogIndexer implements SolrIndexer
 
         // The content
         String strContentToIndex = getContentToIndex( document, item );
-        ContentHandler handler = new BodyContentHandler( PARAMETER_DOCUMENT_MAX_CHARS );
-        Metadata metadata = new Metadata( );
-
         try
         {
-            new HtmlParser( ).parse( new ByteArrayInputStream( strContentToIndex.getBytes( ) ), handler, metadata,
-                    new ParseContext( ) );
+            ContentHandler handler =  TikaIndexerUtil.parseHtml( strContentToIndex );
+            item.setContent( handler.toString( ) );
+            
+            List<DocContent> list = DocContentHome.getDocsContentByHtmlDoc( document.getId( ) );
+            if ( CollectionUtils.isNotEmpty( list ) )
+            {
+                // Parse All Doc Contents
+                TikaIndexerUtil.addFileContentToSolrItem( item, list.stream( ).map( DocContent::getBinaryValue ).collect( Collectors.toList( ) ) );
+            }
         }
-        catch ( IOException | TikaException | SAXException e )
+        catch ( LuteceSolrException e )
         {
             throw new AppException( DOC_PARSING_ERROR, e );
         }
-
-        item.setContent( handler.toString( ) );
 
         return item;
     }
@@ -329,7 +320,7 @@ public class SolrBlogIndexer implements SolrIndexer
     {
         return AppPropertiesService.getProperty( PROPERTY_VERSION );
     }
-
+    
     /**
      * {@inheritDoc}
      */
@@ -349,74 +340,6 @@ public class SolrBlogIndexer implements SolrIndexer
     }
 
     /**
-     * Builds a document which will be used by solr during the indexing of the pages
-     * of the site with the following fields : summary, uid, url, contents, title
-     * and description.
-     *
-     * @param document             the document to index
-     * @param strUrl               the url of the documents
-     * @param strRole              the lutece role of the page associate to the
-     *                             document
-     * @param strPortletDocumentId the document id concatened to the id portlet with
-     *                             a & in the middle
-     * @return the built Document
-     */
-    private SolrItem getDocument( Blog document, String strUrl, String strRole, String strPortletDocumentId )
-    {
-        // make a new, empty document
-        SolrItem item = new SolrItem( );
-
-        // Add the url as a field named "url". Use an UnIndexed field, so
-        // that the url is just stored with the document, but is not searchable.
-        item.setUrl( strUrl );
-
-        // Add the PortletDocumentId as a field named "document_portlet_id".
-        item.setDocPortletId( strPortletDocumentId );
-
-        // Add the last modified date of the file a field named "modified".
-        // Use a field that is indexed (i.e. searchable), but don't tokenize
-        // the field into words.
-        item.setDate( document.getUpdateDate( ) );
-
-        // Add the uid as a field, so that index can be incrementally maintained.
-        // This field is not stored with document, it is indexed, but it is not
-        // tokenized prior to indexing.
-        String strIdDocument = String.valueOf( document.getId( ) );
-        item.setUid( getResourceUid( strIdDocument, BlogUtils.CONSTANT_TYPE_RESOURCE ) );
-
-        String strContentToIndex = getContentToIndex( document, item );
-        ContentHandler handler = new BodyContentHandler( );
-        Metadata metadata = new Metadata( );
-
-        try
-        {
-            new HtmlParser( ).parse(
-                    new ByteArrayInputStream( strContentToIndex.getBytes( ) ), handler, metadata, new ParseContext( ) );
-        }
-        catch ( IOException | TikaException | SAXException e )
-        {
-            throw new AppException( DOC_PARSING_ERROR );
-        }
-
-        // Add the tag-stripped contents as a Reader-valued Text field so it will
-        // get tokenized and indexed.
-        item.setContent( handler.toString( ) );
-
-        // Add the title as a separate Text field, so that it can be searched
-        // separately.
-        item.setTitle( document.getName( ) );
-
-        item.setType( TYPE );
-
-        item.setRole( strRole );
-
-        item.setSite( SolrIndexerService.getWebAppName( ) );
-
-        // return the document
-        return item;
-    }
-
-    /**
      * {@inheritDoc}
      */
     @Override
@@ -426,21 +349,13 @@ public class SolrBlogIndexer implements SolrIndexer
 
         int nIdDocument = Integer.parseInt( strIdDocument );
         Blog document = BlogService.getInstance( ).findByPrimaryKeyWithoutBinaries( nIdDocument );
-        List<BlogPublication> it = document.getBlogPubilcation( );
 
         try
         {
-            for ( BlogPublication p : it )
+            SolrItem sorlItem = getItem( document );
+            if ( sorlItem != null )
             {
-                UrlItem url = new UrlItem( SolrIndexerService.getBaseUrl( ) );
-                url.addParameter( PARAMETER_XPAGE, XPAGE_BLOG );
-                url.addParameter( PARAMETER_BLOG_ID, nIdDocument );
-                url.addParameter( PARAMETER_PORTLET_ID, p.getIdPortlet( ) );
-
-                String strPortletDocumentId = nIdDocument + "&" + p.getIdPortlet( );
-                Page page = PageHome.getPage( p.getPortlet( ).getPageId( ) );
-
-                lstItems.add( getDocument( document, url.getUrl( ), page.getRole( ), strPortletDocumentId ) );
+                lstItems.add( sorlItem );
             }
         }
         catch ( Exception e )

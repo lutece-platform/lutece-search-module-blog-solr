@@ -54,7 +54,7 @@ public class SolrBlogIndexerTest extends LuteceTestCase
     {
         SolrBlogIndexer indexer = new SolrBlogIndexer( );
        
-       List<String> errors = indexer.indexListDocuments( null, new ArrayList<>( ) );
+       List<String> errors = indexer.indexListDocuments( new ArrayList<>( ) );
        assertEquals( 0, errors.size( ) );
     }
 }
