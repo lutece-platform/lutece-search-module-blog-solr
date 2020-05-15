@@ -30,4 +30,14 @@
     <!-- Portlet parameters -->
     <portlets>
     </portlets>
+    
+    <!-- Daemons -->
+    <daemons>
+        <daemon>
+            <daemon-id>outdatedBlogDaemon</daemon-id>
+            <daemon-name>module.blog.solr.daemon.outdated.name</daemon-name>
+            <daemon-description>module.blog.solr.daemon.outdated.description</daemon-description>
+            <daemon-class>fr.paris.lutece.plugins.blog.modules.solr.daemon.OutdatedBlogDaemon</daemon-class>
+        </daemon>
+    </daemons>
 </plug-in>
