@@ -210,7 +210,7 @@ public class SolrBlogIndexer implements SolrIndexer
     {
         // Search for published blogs.
         Date today = new Date( );
-        List<BlogPublication> listBlogPublications = document.getBlogPubilcation( ).stream( ).filter(
+        List<BlogPublication> listBlogPublications = document.getBlogPublication( ).stream( ).filter(
                 bp -> bp.getDateBeginPublishing( ).before( today ) && bp.getDateEndPublishing( ).after( today ) )
                 .collect( Collectors.toList( ) );
 
