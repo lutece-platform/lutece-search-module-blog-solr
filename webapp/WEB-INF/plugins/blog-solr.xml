@@ -1,12 +1,11 @@
-<?xml version="1.0" encoding="UTF-8" standalone="no"?>
-<plug-in>
+<?xml version="1.0" encoding="UTF-8"?><plug-in>
     <name>blog-solr</name>
     <class>fr.paris.lutece.portal.service.plugin.PluginDefaultImplementation</class>
-    <version>1.0.1-SNAPSHOT</version>
-    <documentation />
-    <installation />
-    <changes />
-    <user-guide />
+    <version>1.0.1</version>
+    <documentation/>
+    <installation/>
+    <changes/>
+    <user-guide/>
     <description>module.blog.solr.module.description</description>
     <provider>module.blog.solr.module.provider</provider>
     <provider-url>http://your.web.site.com</provider-url>
@@ -16,7 +15,7 @@
 
     <core-version-dependency>
         <min-core-version>4.1.0</min-core-version>
-        <max-core-version />
+        <max-core-version/>
     </core-version-dependency>
 
     <!-- Admin features parameters -->
