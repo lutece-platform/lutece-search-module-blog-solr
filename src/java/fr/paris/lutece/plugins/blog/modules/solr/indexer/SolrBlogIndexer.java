@@ -42,7 +42,6 @@ import java.util.List;
 import java.util.stream.Collectors;
 
 import org.apache.commons.collections.CollectionUtils;
-import org.xml.sax.ContentHandler;
 
 import fr.paris.lutece.plugins.blog.business.Blog;
 import fr.paris.lutece.plugins.blog.business.DocContent;
@@ -57,16 +56,18 @@ import fr.paris.lutece.plugins.search.solr.indexer.SolrIndexerService;
 import fr.paris.lutece.plugins.search.solr.indexer.SolrItem;
 import fr.paris.lutece.plugins.search.solr.util.LuteceSolrException;
 import fr.paris.lutece.plugins.search.solr.util.SolrConstants;
-import fr.paris.lutece.plugins.search.solr.util.TikaIndexerUtil;
+import fr.paris.lutece.plugins.search.solr.util.SolrHtmlParserUtil;
 import fr.paris.lutece.portal.service.util.AppException;
 import fr.paris.lutece.portal.service.util.AppLogService;
 import fr.paris.lutece.portal.service.util.AppPropertiesService;
 import fr.paris.lutece.util.url.UrlItem;
+import jakarta.enterprise.context.ApplicationScoped;
 
 /**
  * The indexer service for Solr.
  *
  */
+@ApplicationScoped
 public class SolrBlogIndexer implements SolrIndexer
 {
     public static final String BEAN_NAME = "blog-solr.solrBlogIndexer";
@@ -85,8 +86,7 @@ public class SolrBlogIndexer implements SolrIndexer
     private static final String XPAGE_BLOG = "blog";
     private static final List<String> LIST_RESSOURCES_NAME = new ArrayList<>( );
     private static final String SHORT_NAME = "blog";
-    private static final String DOC_INDEXATION_ERROR = "[SolrBlogIndexer] An error occured during the indexation of the document number ";
-    private static final String DOC_PARSING_ERROR = "[SolrBlogIndexer] Error during document parsing. ";
+    private static final String DOC_INDEXATION_ERROR = "[SolrBlogIndexer] An error occured during the indexation of the document number {}";
 
     /**
      * Creates a new SolrPageIndexer
@@ -133,7 +133,7 @@ public class SolrBlogIndexer implements SolrIndexer
             catch ( Exception e )
             {
                 lstErrors.add( SolrIndexerService.buildErrorMessage( e ) );
-                AppLogService.error( DOC_INDEXATION_ERROR + document.getId( ), e );
+                AppLogService.error( DOC_INDEXATION_ERROR, document.getId( ), e );
             }
         }
 
@@ -256,21 +256,13 @@ public class SolrBlogIndexer implements SolrIndexer
 
         // The content
         String strContentToIndex = getContentToIndex( document, item );
-        try
+        item.setContent( SolrHtmlParserUtil.parseHtml( strContentToIndex ) );
+
+        List<DocContent> list = DocContentHome.getDocsContentByHtmlDoc( document.getId( ) );
+        if ( CollectionUtils.isNotEmpty( list ) )
         {
-            ContentHandler handler =  TikaIndexerUtil.parseHtml( strContentToIndex );
-            item.setContent( handler.toString( ) );
-            
-            List<DocContent> list = DocContentHome.getDocsContentByHtmlDoc( document.getId( ) );
-            if ( CollectionUtils.isNotEmpty( list ) )
-            {
-                // Parse All Doc Contents
-                TikaIndexerUtil.addFileContentToSolrItem( item, list.stream( ).map( DocContent::getBinaryValue ).collect( Collectors.toList( ) ) );
-            }
-        }
-        catch ( LuteceSolrException e )
-        {
-            throw new AppException( DOC_PARSING_ERROR, e );
+            // Parse All Doc Contents
+            SolrHtmlParserUtil.addFileContentToSolrItem( item, list.stream( ).map( DocContent::getBinaryValue ).collect( Collectors.toList( ) ) );
         }
 
         return item;
@@ -349,6 +341,11 @@ public class SolrBlogIndexer implements SolrIndexer
 
         int nIdDocument = Integer.parseInt( strIdDocument );
         Blog document = BlogService.getInstance( ).findByPrimaryKeyWithoutBinaries( nIdDocument );
+
+        if ( document == null )
+        {
+            return lstItems;
+        }
 
         try
         {
