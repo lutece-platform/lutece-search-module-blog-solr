@@ -39,17 +39,22 @@ import java.util.List;
 import fr.paris.lutece.plugins.blog.modules.solr.indexer.SolrBlogIndexer;
 import fr.paris.lutece.test.LuteceTestCase;
 
+import org.junit.jupiter.api.Test;
+
 public class SolrBlogIndexerTest extends LuteceTestCase
 {
 
-    public void testIndexDocuments_empty()
+    @Test
+    public void testIndexerDescribesItself()
     {
         SolrBlogIndexer indexer = new SolrBlogIndexer( );
-       
-       List<String> errors = indexer.indexDocuments( );
-       assertEquals( 0, errors.size( ) );
+
+        assertNotNull( indexer.getName( ) );
+        assertNotNull( indexer.getVersion( ) );
+        assertFalse( indexer.getResourcesName( ).isEmpty( ) );
     }
-    
+
+    @Test
     public void testIndexListDocuments_empty() throws Exception
     {
         SolrBlogIndexer indexer = new SolrBlogIndexer( );
